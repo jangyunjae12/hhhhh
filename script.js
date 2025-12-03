@@ -165,13 +165,11 @@ function checkDateChange() {
     const today = new Date().toISOString().split('T')[0];
 
     if (today !== lastCheckedDate) {
-        // 1) 투두: 전날의 할일 목록 삭제
-        deleteOldTodos(lastCheckedDate);
+        // 날짜만 갱신 (이제는 전날 할일을 삭제하지 않고 기록을 유지)
         lastCheckedDate = today;
 
         // 현재 선택된 날짜가 이전 날짜라면 오늘로 변경
         if (currentDate < today) {
-            deleteOldTodos(currentDate);
             currentDate = today;
             const dateInput = document.getElementById('selected-date');
             if (dateInput) dateInput.value = currentDate;
@@ -179,7 +177,7 @@ function checkDateChange() {
             loadTodos();
         }
 
-        // 2) 발로란트: 날짜도 자동으로 오늘로 맞추기
+        // 발로란트 날짜도 자동으로 오늘로 맞추기
         if (valorantDate < today) {
             valorantDate = today;
             const valorantInput = document.getElementById('valorant-date');
@@ -189,12 +187,11 @@ function checkDateChange() {
     }
 }
 
-// 전날의 할일 목록 삭제
+// (지금은 자동 삭제에 안 쓰지만, 혹시 수동으로 쓰고 싶으면 남겨둔 함수)
 function deleteOldTodos(date) {
     const storageKey = `todos_${date}`;
     localStorage.removeItem(storageKey);
 
-    // 전체 목록에서도 해당 날짜의 할일 제거
     const allTodos = JSON.parse(localStorage.getItem('all_todos') || '[]');
     const filteredTodos = allTodos.filter(t => t.date !== date);
     localStorage.setItem('all_todos', JSON.stringify(filteredTodos));
@@ -203,13 +200,6 @@ function deleteOldTodos(date) {
 // 날짜 변경 핸들러 (리스트 탭 date input)
 function handleDateChange(e) {
     const selectedDate = e.target.value;
-    const today = new Date().toISOString().split('T')[0];
-
-    // 다음날로 넘어가면 전날 데이터 삭제
-    if (selectedDate > currentDate && selectedDate >= today) {
-        deleteOldTodos(currentDate);
-    }
-
     currentDate = selectedDate;
     updateDateDisplay();
     loadTodos();
@@ -220,12 +210,6 @@ function changeDate(days) {
     const date = new Date(currentDate);
     date.setDate(date.getDate() + days);
     const newDate = date.toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
-
-    // 다음날로 넘어가면 전날 데이터 삭제
-    if (newDate > currentDate && newDate >= today) {
-        deleteOldTodos(currentDate);
-    }
 
     currentDate = newDate;
     document.getElementById('selected-date').value = currentDate;
