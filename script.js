@@ -40,7 +40,7 @@ function initializeApp() {
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
-    // 탭 전환 (버튼 안에 span 등 있어도 안전하게 작동)
+    // 탭 전환
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const tabName = e.currentTarget.dataset.tab;
@@ -150,11 +150,9 @@ function checkDateChange() {
     const today = new Date().toISOString().split('T')[0];
     
     if (today !== lastCheckedDate) {
-        // 날짜가 바뀌었으면 전날의 할일 목록 삭제 (새로 시작하는 느낌)
         deleteOldTodos(lastCheckedDate);
         lastCheckedDate = today;
         
-        // 현재 선택된 날짜가 전날이면 오늘로 변경하고 전날 데이터 삭제
         if (currentDate < today) {
             deleteOldTodos(currentDate);
             currentDate = today;
@@ -170,12 +168,9 @@ function deleteOldTodos(date) {
     const storageKey = `todos_${date}`;
     localStorage.removeItem(storageKey);
     
-    // 전체 목록에서도 해당 날짜의 할일 제거
     const allTodos = JSON.parse(localStorage.getItem('all_todos') || '[]');
     const filteredTodos = allTodos.filter(t => t.date !== date);
     localStorage.setItem('all_todos', JSON.stringify(filteredTodos));
-    
-    console.log(`전날(${date})의 할일 목록이 삭제되었습니다.`);
 }
 
 // 날짜 변경 핸들러
@@ -183,7 +178,6 @@ function handleDateChange(e) {
     const selectedDate = e.target.value;
     const today = new Date().toISOString().split('T')[0];
     
-    // 다음날로 넘어가면 전날 데이터 삭제
     if (selectedDate > currentDate && selectedDate >= today) {
         deleteOldTodos(currentDate);
     }
@@ -360,7 +354,6 @@ function saveTodos() {
     const todayTodos = todos.filter(todo => todo.date === currentDate);
     localStorage.setItem(storageKey, JSON.stringify(todayTodos));
     
-    // 모든 할일 저장 (전체 목록 유지)
     const allTodos = JSON.parse(localStorage.getItem('all_todos') || '[]');
     const otherTodos = allTodos.filter(t => t.date !== currentDate);
     localStorage.setItem('all_todos', JSON.stringify([...otherTodos, ...todayTodos]));
@@ -447,13 +440,11 @@ function renderCalendar() {
     const calendarGrid = document.getElementById('calendar-grid');
     calendarGrid.innerHTML = '';
     
-    // 빈 칸 추가
     for (let i = 0; i < startingDayOfWeek; i++) {
         const emptyDiv = document.createElement('div');
         calendarGrid.appendChild(emptyDiv);
     }
     
-    // 날짜 추가
     const today = new Date();
     const allTodos = JSON.parse(localStorage.getItem('all_todos') || '[]');
     
@@ -464,14 +455,12 @@ function renderCalendar() {
         
         const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         
-        // 오늘 날짜 표시
         if (currentYear === today.getFullYear() && 
             currentMonth === today.getMonth() && 
             day === today.getDate()) {
             dayDiv.classList.add('today');
         }
         
-        // 할일이 있는 날 표시
         const hasTodos = allTodos.some(t => t.date === dateStr);
         if (hasTodos) {
             dayDiv.classList.add('has-todos');
@@ -503,17 +492,14 @@ function saveValorantData() {
         }
     });
     
-    // 목표 랭크와 주요 에이전트는 전역 설정으로 저장
     const globalSettings = {
         mainAgent: document.getElementById('main-agent-input').value || '미설정',
         targetRank: document.getElementById('target-rank-input').value || '미설정'
     };
     localStorage.setItem('valorant_global_settings', JSON.stringify(globalSettings));
     
-    // 게임 기록 수집
     collectGameEntries();
     
-    // 날짜별 데이터
     const data = {
         currentRank: document.getElementById('current-rank-input').value || '언랭크',
         feedback: document.getElementById('feedback-text').value || '',
@@ -524,7 +510,6 @@ function saveValorantData() {
     const storageKey = `valorant_data_${valorantDate}`;
     localStorage.setItem(storageKey, JSON.stringify(data));
     
-    // 전체 발로란트 데이터도 업데이트
     const allValorantData = JSON.parse(localStorage.getItem('all_valorant_data') || '{}');
     allValorantData[valorantDate] = data;
     localStorage.setItem('all_valorant_data', JSON.stringify(allValorantData));
@@ -537,7 +522,6 @@ function loadValorantData() {
     const storageKey = `valorant_data_${valorantDate}`;
     const saved = localStorage.getItem(storageKey);
     
-    // 전역 설정
     const globalSettings = JSON.parse(localStorage.getItem('valorant_global_settings') || '{}');
     document.getElementById('main-agent-input').value = globalSettings.mainAgent || '미설정';
     document.getElementById('target-rank-input').value = globalSettings.targetRank || '미설정';
@@ -683,7 +667,7 @@ function setupAutoSave() {
     });
 }
 
-// 디바운스 함수
+// 디바운스
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -696,7 +680,7 @@ function debounce(func, wait) {
     };
 }
 
-// 자동 저장 함수
+// 자동 저장
 function autoSaveValorantData() {
     const practiceItems = [];
     document.querySelectorAll('#practice-list li').forEach(li => {
@@ -814,7 +798,7 @@ function collectGameEntries() {
     });
 }
 
-// 통계 모달 표시
+// 통계 모달
 function showStatsModal() {
     statsSteps = buildStatsSteps();
     currentStatsStepIndex = 0;
@@ -871,6 +855,7 @@ function navigateStatsStep(direction) {
     renderStatsStep();
 }
 
+// 오늘 통계
 function renderTodayStatsContent() {
     const todayData = getDayStats(valorantDate);
     return `
@@ -887,6 +872,7 @@ function renderTodayStatsContent() {
     `;
 }
 
+// 오늘 vs 어제
 function renderDailyComparisonContent() {
     const todayData = getDayStats(valorantDate);
     const yesterdayData = getDayStats(getPreviousDay(valorantDate));
@@ -904,6 +890,7 @@ function renderDailyComparisonContent() {
     `;
 }
 
+// 월간 통계
 function renderMonthlyStatsContent() {
     const today = new Date(valorantDate);
     const year = today.getFullYear();
@@ -929,6 +916,7 @@ function renderMonthlyStatsContent() {
     `;
 }
 
+// 랭크 비교
 function renderRankComparisonContent() {
     const today = new Date(valorantDate);
     const isLastDayOfMonth = isLastDay(today);
@@ -945,6 +933,7 @@ function renderRankComparisonContent() {
     `;
 }
 
+// 단일 통계 카드
 function createSingleStatCard(label, value, unit) {
     const displayValue = typeof value === 'number' ? value.toFixed(1) : value;
     return `
@@ -956,6 +945,7 @@ function createSingleStatCard(label, value, unit) {
     `;
 }
 
+// 단일 날짜 그래프 (크게)
 function createSingleDayGraph(label, data) {
     const metrics = [
         { key: 'winRate', label: '승률', unit: '%' },
@@ -972,9 +962,9 @@ function createSingleDayGraph(label, data) {
     );
     
     return `
-        <div class="graph-container">
+        <div class="graph-container graph-container-large">
             <div class="graph-title">${label} 그래프</div>
-            <div class="bar-graph">
+            <div class="bar-graph bar-graph-large">
                 ${metrics.map(metric => `
                     <div class="bar-item">
                         <div class="bar" style="height: ${(data[metric.key] / maxValue) * 100}%">
@@ -988,6 +978,7 @@ function createSingleDayGraph(label, data) {
     `;
 }
 
+// 비교 그래프 (크고, 레전드 추가)
 function createComparisonGraph(label1, label2, data1, data2) {
     const metrics = [
         { key: 'winRate', label: '승률', unit: '%' },
@@ -1002,15 +993,25 @@ function createComparisonGraph(label1, label2, data1, data2) {
     );
     
     return `
-        <div class="graph-container">
+        <div class="graph-container graph-container-large">
             <div class="graph-title">${label1}과 ${label2} 그래프 비교</div>
-            <div class="bar-graph">
+            <div class="graph-legend">
+                <div class="legend-item">
+                    <span class="legend-color legend-primary"></span>
+                    <span>${label1}</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-color legend-secondary"></span>
+                    <span>${label2}</span>
+                </div>
+            </div>
+            <div class="bar-graph bar-graph-large">
                 ${metrics.map(metric => `
-                    <div class="bar-item">
-                        <div class="bar" style="height: ${(data1[metric.key] / maxValue) * 100}%">
+                    <div class="bar-item bar-item-double">
+                        <div class="bar bar-primary" style="height: ${(data1[metric.key] / maxValue) * 100}%">
                             <span class="bar-value">${data1[metric.key].toFixed(1)}${metric.unit}</span>
                         </div>
-                        <div class="bar secondary" style="height: ${(data2[metric.key] / maxValue) * 100}%">
+                        <div class="bar bar-secondary" style="height: ${(data2[metric.key] / maxValue) * 100}%">
                             <span class="bar-value">${data2[metric.key].toFixed(1)}${metric.unit}</span>
                         </div>
                         <div class="bar-label">${metric.label}</div>
@@ -1021,6 +1022,7 @@ function createComparisonGraph(label1, label2, data1, data2) {
     `;
 }
 
+// 비교 카드
 function createStatCard(label, current, previous, unit) {
     const change = current - previous;
     const safePrevious = previous === 0 ? 1 : previous;
@@ -1045,6 +1047,7 @@ function createStatCard(label, current, previous, unit) {
     `;
 }
 
+// 랭크 비교 UI
 function createRankComparison(currentLabel, previousLabel, currentDate, previousDate) {
     const currentRankObj = parseRank(getRankForDate(currentDate));
     const previousRankObj = parseRank(getRankForDate(previousDate));
@@ -1082,6 +1085,7 @@ function createRankComparison(currentLabel, previousLabel, currentDate, previous
     `;
 }
 
+// 랭크 파싱
 function parseRank(rankString) {
     if (!rankString) {
         return { tier: '언랭크', level: 0, score: 0 };
@@ -1136,7 +1140,7 @@ function formatRankDisplay(rankObj) {
     return rankObj.tier;
 }
 
-// 날짜별 통계 가져오기
+// 날짜별 통계
 function getDayStats(date) {
     const storageKey = `valorant_data_${date}`;
     const saved = localStorage.getItem(storageKey);
@@ -1169,7 +1173,7 @@ function getDayStats(date) {
     };
 }
 
-// 월간 통계 가져오기
+// 월간 통계
 function getMonthStats(year, month) {
     const allValorantData = JSON.parse(localStorage.getItem('all_valorant_data') || '{}');
     const monthStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -1207,7 +1211,7 @@ function getMonthStats(year, month) {
     };
 }
 
-// 날짜의 랭크 가져오기
+// 날짜의 랭크
 function getRankForDate(date) {
     const storageKey = `valorant_data_${date}`;
     const saved = localStorage.getItem(storageKey);
@@ -1218,20 +1222,20 @@ function getRankForDate(date) {
     return data.currentRank || '언랭크';
 }
 
-// 이전 날짜 가져오기
+// 이전 날짜
 function getPreviousDay(date) {
     const d = new Date(date);
     d.setDate(d.getDate() - 1);
     return d.toISOString().split('T')[0];
 }
 
-// 마지막 날인지 확인
+// 마지막 날인지
 function isLastDay(date) {
     const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     return date.getDate() === lastDay.getDate();
 }
 
-// 저번 달 마지막 날 가져오기
+// 저번 달 마지막 날
 function getLastDayOfPreviousMonth(year, month) {
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
@@ -1244,7 +1248,7 @@ function searchStats() {
     window.open('https://tracker.gg/valorant', '_blank');
 }
 
-// 유튜브 열기
+// 유튜브
 function openYouTube() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
