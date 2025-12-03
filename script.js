@@ -11,6 +11,7 @@ let gameEntries = [];
 
 // 랭크 순서
 const rankOrder = ['언랭크', '아이언', '브론즈', '실버', '골드', '플래티넘', '다이아몬드', '초월자', '불멸', '레디언트'];
+
 let statsSteps = [];
 let currentStatsStepIndex = 0;
 
@@ -39,10 +40,11 @@ function initializeApp() {
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
-    // 탭 전환
+    // 탭 전환 (버튼 안에 span 등 있어도 안전하게 작동)
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            switchTab(e.target.dataset.tab);
+            const tabName = e.currentTarget.dataset.tab;
+            switchTab(tabName);
         });
     });
 
@@ -69,6 +71,7 @@ function setupEventListeners() {
         }
         renderCalendar();
     });
+
     document.getElementById('next-month').addEventListener('click', () => {
         currentMonth++;
         if (currentMonth > 11) {
@@ -182,7 +185,6 @@ function handleDateChange(e) {
     
     // 다음날로 넘어가면 전날 데이터 삭제
     if (selectedDate > currentDate && selectedDate >= today) {
-        // 다음날로 넘어갔을 때 전날 데이터 삭제
         deleteOldTodos(currentDate);
     }
     
@@ -198,7 +200,6 @@ function changeDate(days) {
     const newDate = date.toISOString().split('T')[0];
     const today = new Date().toISOString().split('T')[0];
     
-    // 다음날로 넘어가면 전날 데이터 삭제 (새로 시작하는 느낌)
     if (newDate > currentDate && newDate >= today) {
         deleteOldTodos(currentDate);
     }
@@ -221,7 +222,6 @@ function updateDateDisplay() {
 function addTodo() {
     const input = document.getElementById('todo-input');
     const text = input.value.trim();
-    
     if (text === '') return;
     
     const todo = {
@@ -302,7 +302,6 @@ function openEditModal(id) {
 function saveEditTodo() {
     const input = document.getElementById('edit-todo-input');
     const text = input.value.trim();
-    
     if (text === '') return;
     
     const todo = todos.find(t => t.id === editingTodoId);
@@ -374,11 +373,9 @@ function loadTodos() {
     
     if (saved) {
         const todayTodos = JSON.parse(saved);
-        // 전체 목록에서 현재 날짜 할일만 필터링
         const allTodos = JSON.parse(localStorage.getItem('all_todos') || '[]');
         todos = allTodos.filter(t => t.date !== currentDate).concat(todayTodos);
     } else {
-        // 현재 날짜에 할일이 없으면 전체 목록에서 제거
         const allTodos = JSON.parse(localStorage.getItem('all_todos') || '[]');
         todos = allTodos.filter(t => t.date !== currentDate);
     }
@@ -395,8 +392,10 @@ function switchTab(tabName) {
         content.classList.remove('active');
     });
     
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    document.getElementById(`${tabName}-tab`).classList.add('active');
+    const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+    const tabContent = document.getElementById(`${tabName}-tab`);
+    if (tabBtn) tabBtn.classList.add('active');
+    if (tabContent) tabContent.classList.add('active');
     
     if (tabName === 'calendar') {
         renderCalendar();
@@ -483,7 +482,6 @@ function renderCalendar() {
             document.getElementById('selected-date').value = currentDate;
             updateDateDisplay();
             showCalendarTodos(dateStr);
-            // 리스트 탭으로 이동하지 않고 달력 탭에 머물면서 할일 표시
         });
         
         calendarGrid.appendChild(dayDiv);
@@ -515,7 +513,7 @@ function saveValorantData() {
     // 게임 기록 수집
     collectGameEntries();
     
-    // 날짜별 데이터 (현재 랭크는 날짜별로 구분)
+    // 날짜별 데이터
     const data = {
         currentRank: document.getElementById('current-rank-input').value || '언랭크',
         feedback: document.getElementById('feedback-text').value || '',
@@ -539,7 +537,7 @@ function loadValorantData() {
     const storageKey = `valorant_data_${valorantDate}`;
     const saved = localStorage.getItem(storageKey);
     
-    // 목표 랭크와 주요 에이전트는 날짜와 무관하게 유지 (전역 설정)
+    // 전역 설정
     const globalSettings = JSON.parse(localStorage.getItem('valorant_global_settings') || '{}');
     document.getElementById('main-agent-input').value = globalSettings.mainAgent || '미설정';
     document.getElementById('target-rank-input').value = globalSettings.targetRank || '미설정';
@@ -549,14 +547,11 @@ function loadValorantData() {
         document.getElementById('current-rank-input').value = data.currentRank || '언랭크';
         document.getElementById('feedback-text').value = data.feedback || '';
         
-        // 게임 기록 불러오기
         gameEntries = data.games || [];
         renderGameEntries();
         
-        // 연습 계획 불러오기
         renderPracticePlan(data.practicePlan || []);
     } else {
-        // 기본값 설정
         document.getElementById('current-rank-input').value = '언랭크';
         document.getElementById('feedback-text').value = '';
         gameEntries = [];
@@ -613,7 +608,6 @@ function savePracticeItem(index) {
     const inputs = document.querySelectorAll('.practice-input');
     if (inputs[index]) {
         inputs[index].readOnly = false;
-        // 자동 저장은 saveValorantData에서 처리
     }
 }
 
@@ -622,7 +616,6 @@ function deletePracticeItem(index) {
     const listEl = document.getElementById('practice-list');
     if (listEl.children[index]) {
         listEl.children[index].remove();
-        // 인덱스 재설정
         Array.from(listEl.children).forEach((li, i) => {
             const input = li.querySelector('input');
             const saveBtn = li.querySelector('.btn-save-practice');
@@ -634,7 +627,7 @@ function deletePracticeItem(index) {
     }
 }
 
-// 전역 설정 저장 (목표 랭크, 주요 에이전트)
+// 전역 설정 저장
 function saveGlobalSettings() {
     const globalSettings = {
         mainAgent: document.getElementById('main-agent-input').value || '미설정',
@@ -645,7 +638,6 @@ function saveGlobalSettings() {
 
 // 자동 저장 설정
 function setupAutoSave() {
-    // 입력 필드 변경 시 자동 저장
     const autoSaveFields = [
         'current-rank-input',
         'main-agent-input',
@@ -660,7 +652,6 @@ function setupAutoSave() {
     autoSaveFields.forEach(fieldId => {
         const field = document.getElementById(fieldId);
         if (field) {
-            // 목표 랭크와 주요 에이전트는 전역 설정 저장
             if (fieldId === 'main-agent-input' || fieldId === 'target-rank-input') {
                 field.addEventListener('input', debounce(saveGlobalSettings, 1000));
                 field.addEventListener('change', saveGlobalSettings);
@@ -671,12 +662,10 @@ function setupAutoSave() {
         }
     });
     
-    // 연습 계획 입력 필드 자동 저장
     document.addEventListener('input', (e) => {
         if (e.target.classList.contains('practice-input')) {
             debounce(autoSaveValorantData, 1000)();
         }
-        // 게임 기록 입력 필드 자동 저장
         if (e.target.classList.contains('game-stat-input')) {
             debounce(() => {
                 collectGameEntries();
@@ -685,7 +674,6 @@ function setupAutoSave() {
         }
     });
     
-    // 게임 결과 버튼 클릭 이벤트
     document.addEventListener('click', (e) => {
         if (e.target.classList.contains('result-btn')) {
             const gameIndex = parseInt(e.target.dataset.gameIndex);
@@ -723,17 +711,14 @@ function autoSaveValorantData() {
         }
     });
     
-    // 목표 랭크와 주요 에이전트는 전역 설정으로 저장
     const globalSettings = {
         mainAgent: document.getElementById('main-agent-input').value || '미설정',
         targetRank: document.getElementById('target-rank-input').value || '미설정'
     };
     localStorage.setItem('valorant_global_settings', JSON.stringify(globalSettings));
     
-    // 게임 기록 수집
     collectGameEntries();
     
-    // 날짜별 데이터 (현재 랭크는 날짜별로 구분)
     const data = {
         currentRank: document.getElementById('current-rank-input').value || '언랭크',
         feedback: document.getElementById('feedback-text').value || '',
@@ -744,7 +729,6 @@ function autoSaveValorantData() {
     const storageKey = `valorant_data_${valorantDate}`;
     localStorage.setItem(storageKey, JSON.stringify(data));
     
-    // 전체 발로란트 데이터도 업데이트
     const allValorantData = JSON.parse(localStorage.getItem('all_valorant_data') || '{}');
     allValorantData[valorantDate] = data;
     localStorage.setItem('all_valorant_data', JSON.stringify(allValorantData));
@@ -754,7 +738,7 @@ function autoSaveValorantData() {
 function addGameEntry() {
     const game = {
         id: Date.now(),
-        result: null, // 'win' or 'loss'
+        result: null,
         kill: '',
         death: '',
         assist: ''
@@ -829,10 +813,6 @@ function collectGameEntries() {
         }
     });
 }
-
-// 통계 모달 상태
-let statsSteps = [];
-let currentStatsStepIndex = 0;
 
 // 통계 모달 표시
 function showStatsModal() {
@@ -1231,11 +1211,9 @@ function getMonthStats(year, month) {
 function getRankForDate(date) {
     const storageKey = `valorant_data_${date}`;
     const saved = localStorage.getItem(storageKey);
-    
     if (!saved) {
         return '언랭크';
     }
-    
     const data = JSON.parse(saved);
     return data.currentRank || '언랭크';
 }
@@ -1266,7 +1244,7 @@ function searchStats() {
     window.open('https://tracker.gg/valorant', '_blank');
 }
 
-// 유튜브 열기 (앱이 있으면 앱으로, 없으면 웹으로)
+// 유튜브 열기
 function openYouTube() {
     const userAgent = navigator.userAgent || navigator.vendor || window.opera;
     const isMobile = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
@@ -1278,28 +1256,23 @@ function openYouTube() {
         const webUrl = 'https://www.youtube.com';
         
         if (isIOS) {
-            // iOS의 경우
             appUrl = 'youtube://';
         } else if (isAndroid) {
-            // Android의 경우
             appUrl = 'vnd.youtube://';
         } else {
             appUrl = 'vnd.youtube://';
         }
         
-        // 앱으로 열기 시도
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         iframe.src = appUrl;
         document.body.appendChild(iframe);
         
-        // 앱이 없으면 웹으로 폴백
         setTimeout(() => {
             document.body.removeChild(iframe);
             window.open(webUrl, '_blank');
         }, 1000);
     } else {
-        // 데스크톱인 경우 웹으로 열기
         window.open('https://www.youtube.com', '_blank');
     }
 }
